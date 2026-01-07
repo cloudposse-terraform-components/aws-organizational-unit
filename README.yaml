@@ -1,75 +1,133 @@
-name: "template"
-
-# Canonical GitHub repo
-github_repo: "cloudposse-terraform-components/template"
-
-# Short description of this project
+name: "aws-organizational-unit"
+github_repo: "cloudposse-terraform-components/aws-organizational-unit"
 description: |-
-  Description of this component 55
+  This component is responsible for creating or importing a single AWS Organizations Organizational Unit (OU).
+
+  Unlike the monolithic `account` component which manages the entire organization hierarchy,
+  this component follows the single-resource pattern - it only manages a single OU.
+
+  > [!NOTE]
+  >
+  > This component should be deployed from the **management/root account** as it creates OUs
+  > within AWS Organizations.
 
 usage: |-
-  **Stack Level**: Regional or Global
+  **Stack Level**: Global (deployed in the management/root account)
 
-  Here's an example snippet for how to use this component.
+  ### Basic Usage
 
   ```yaml
   components:
     terraform:
-      foo:
+      aws-organizational-unit/core:
+        metadata:
+          component: aws-organizational-unit
         vars:
-          enabled: true
+          name: core
+          parent_id: !terraform.output aws-organization organization_root_id
   ```
 
+  ### Using Remote State for Parent ID
 
+  Reference the organization root dynamically:
 
+  ```yaml
+  components:
+    terraform:
+      aws-organizational-unit/core:
+        metadata:
+          component: aws-organizational-unit
+        vars:
+          name: core
+          parent_id: !terraform.output aws-organization organization_root_id
 
+      aws-organizational-unit/plat:
+        metadata:
+          component: aws-organizational-unit
+        vars:
+          name: plat
+          parent_id: !terraform.output aws-organization organization_root_id
+  ```
 
-tags:
-  - terraform
-  - terraform-modules
-  - aws
-  - components
-  - terraform-components
-  - root
-  - geodesic
-  - reference-implementation
-  - reference-architecture
+  ### Importing an Existing OU
 
-# Categories of this project
-categories:
-  - terraform-modules/root
-  - terraform-components
+  To import an existing Organizational Unit:
 
-# License of this project
-license: "APACHE2"
+  1. Get the OU ID:
+     ```bash
+     aws organizations list-organizational-units-for-parent --parent-id r-xxxx
+     ```
 
-# Badges to display
-badges:
-  - name: "Latest Release"
-    image: "https://img.shields.io/github/release/cloudposse-terraform-components/template.svg?style=for-the-badge"
-    url: "https://github.com/cloudposse-terraform-components/template/releases/latest"
-  - name: "Slack Community"
-    image: "https://slack.cloudposse.com/for-the-badge.svg"
-    url: "https://slack.cloudposse.com"
+  2. Set the `import_resource_id` variable:
+     ```yaml
+     components:
+       terraform:
+         aws-organizational-unit/core:
+           metadata:
+             component: aws-organizational-unit
+           vars:
+             name: core
+             parent_id: "r-xxxx"
+             import_resource_id: "ou-xxxx-xxxxxxxx"
+     ```
+
+  3. Run `atmos terraform apply`
+
+  After successful import, you can remove the `import_resource_id` variable.
+
+  > **Note:** If you don't need import functionality, you can exclude `imports.tf` when vendoring the component.
+
+  ## Related Components
+
+  This component is part of a suite of single-resource components for AWS Organizations:
+
+  | Component | Purpose |
+  |-----------|---------|
+  | `aws-organization` | Creates/imports the AWS Organization |
+  | `aws-organizational-unit` | Creates/imports a single OU (this component) |
+  | `aws-account` | Creates/imports a single AWS Account |
+  | `aws-account-settings` | Configures account settings |
+  | `aws-scp` | Creates/imports Service Control Policies |
 
 references:
-  - name: "Cloud Posse Documentation"
-    description: "Complete documentation for the Cloud Posse solution"
-    url: "https://docs.cloudposse.com"
-  - name: "Reference Architectures"
-    description: "Launch effortlessly with our turnkey reference architectures, built either by your team or ours."
-    url: "https://cloudposse.com/"
+  - name: cloudposse-terraform-components
+    url: https://github.com/orgs/cloudposse-terraform-components/repositories
+    description: Cloud Posse's upstream components
+  - name: AWS Organizations OUs
+    url: https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_ous.html
+    description: AWS Organizations OU documentation
+  - name: OpenTofu Import Blocks
+    url: https://opentofu.org/docs/language/import/
+    description: OpenTofu 1.7+ import block documentation
+
+tags:
+  - component/aws-organizational-unit
+  - layer/accounts
+  - provider/aws
+  - privileged
+
+categories:
+  - component/aws-organizational-unit
+  - layer/accounts
+  - provider/aws
+  - privileged
+
+license: "APACHE2"
+
+badges:
+  - name: Latest Release
+    image: https://img.shields.io/github/release/cloudposse-terraform-components/aws-organizational-unit.svg?style=for-the-badge
+    url: https://github.com/cloudposse-terraform-components/aws-organizational-unit/releases/latest
+  - name: Slack Community
+    image: https://slack.cloudposse.com/for-the-badge.svg
+    url: https://slack.cloudposse.com
 
 related:
-- name: "Cloud Posse Terraform Modules"
-  description: Our collection of reusable Terraform modules used by our reference architectures.
-  url: "https://docs.cloudposse.com/modules/"
-- name: "Atmos"
-  description: "Atmos is like docker-compose but for your infrastructure"
-  url: "https://atmos.tools"
+  - name: "Cloud Posse Terraform Modules"
+    description: Our collection of reusable Terraform modules used by our reference architectures.
+    url: "https://docs.cloudposse.com/modules/"
+  - name: "Atmos"
+    description: "Atmos is like docker-compose but for your infrastructure"
+    url: "https://atmos.tools"
 
-contributors: [] # If included generates contribs
-
-
-
-
+contributors: []

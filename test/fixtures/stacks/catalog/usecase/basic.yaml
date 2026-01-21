@@ -5,3 +5,5 @@ components:
         component: target
       vars:
         enabled: true
+        parent_id: "r-1234567890"
+        name: "example"
